@@ -3,7 +3,8 @@
   "version": "0.1.1",
   "description": "A Lucy lezer grammar",
   "type": "module",
-  "exports": "lib/parser.js",
+  "main": "lib/parser.js",
+  "exports": "./lib/parser.js",
   "scripts": {
     "build": "lezer-generator src/lucy.grammar -o lib/parser.js",
     "test": "echo \"Error: no test specified\" && exit 1"
