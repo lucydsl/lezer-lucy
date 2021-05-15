@@ -1,0 +1,156 @@
+@top Program { statement+ }
+
+@precedence {
+  call,
+  statement
+}
+
+statement[@isGroup=Statement] {
+  UseDeclaration |
+  StateDeclaration |
+  ActionDeclaration |
+  GuardDeclaration |
+  MachineDeclaration
+}
+
+UseDeclaration {
+  kw<"use"> String UseGroup
+}
+
+UseGroup {
+  "{" commaSep<VariableDefinition> "}"
+}
+
+MachineDeclaration {
+  kw<"machine"> VariableDefinition MachineBlock
+}
+
+MachineBlock {
+  "{" (ActionDeclaration | GuardDeclaration | StateBlock)* "}"
+}
+
+StateDeclaration {
+  (ckw<"initial"> | ckw<"final">)? kw<"state"> VariableDefinition StateBlock
+}
+
+StateBlock {
+  "{" (EventTransition | ImmediateTransition | DelayTransition | InvokeDeclaration)* "}"
+}
+
+InvokeDeclaration {
+  kw<"invoke"> !call ArgList InvokeBlock
+}
+
+InvokeBlock {
+  "{" EventTransition* "}"
+}
+
+/*Block {
+  !statement "{" statement* "}"
+}*/
+
+VariableName { identifier ~arrow }
+VariableDefinition { identifier ~arrow }
+Symbol { symbol ~arrow }
+
+ActionDeclaration {
+  kw<"action"> VariableName "=" (VariableName | Symbol | InlineAssign)
+}
+
+GuardDeclaration {
+  kw<"guard"> VariableName "=" (VariableName | Symbol)
+}
+
+InlineAction {
+  kw<"action"> !call ArgList
+}
+
+Delay {
+  kw<"delay"> !call ArgList
+}
+
+InlineGuard {
+  kw<"guard"> !call ArgList
+}
+
+InlineAssign {
+  kw<"assign"> !call "(" commaSep<"..."? (VariableName | InlineSpawn)> ")"
+}
+
+InlineSpawn {
+  kw<"spawn"> !call ArgList
+}
+
+InlineSend {
+  kw<"send"> !call ArgList
+}
+
+DelayTransition {
+  Delay "=>" TransitionDest
+}
+
+EventTransition {
+  VariableName "=>" TransitionDest
+}
+
+ImmediateTransition {
+  "=>" TransitionDest
+}
+
+TransitionDest {
+  InlineGuard | InlineAction | InlineAssign | InlineSend | VariableName
+}
+
+ArgList {
+  "(" commaSep<"..."? expressionNoComma> ")"
+}
+
+expressionNoComma {
+  VariableName |
+  Symbol
+}
+
+commaSep<content> {
+  "" | content ("," content?)*
+}
+
+// Keywords
+
+kw<term> { @specialize[@name={term}]<identifier, term> }
+
+// Contextual Keywords
+
+ckw<term> { @extend[@name={term}]<identifier, term> }
+
+@tokens {
+  whitespace { std.whitespace+ }
+
+  LineComment { "//" ![\n]* }
+
+  BlockComment { "/*" blockCommentRest }
+
+  blockCommentRest { ![*] blockCommentRest | "*" blockCommentAfterStar }
+
+  blockCommentAfterStar { "/" | "*" blockCommentAfterStar | ![/*] blockCommentRest }
+
+  identifierChar { std.asciiLetter | $[_$\u{a1}-\u{10ffff}] }
+
+  word { identifierChar (identifierChar | std.digit)* }
+
+  identifier { word }
+
+  symbol { ":" word }
+
+  @precedence { identifier, whitespace }
+
+  String {
+    '"' (![\\\n"] | "\\" _)* '"'? |
+    "'" (![\\\n'] | "\\" _)* "'"?
+  }
+
+  "=>"[@name=Arrow]
+}
+
+@skip { whitespace | LineComment | BlockComment }
+
+@detectDelim

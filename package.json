@@ -1,0 +1,27 @@
+{
+  "name": "@lucy/lezer-lucy",
+  "version": "0.1.0",
+  "description": "A Lucy lezer grammar",
+  "module": "lib/parser.js",
+  "scripts": {
+    "build": "lezer-generator src/lucy.grammar -o lib/parser.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "files": [
+    "lib"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/lucydsl/lezer-lucy.git"
+  },
+  "keywords": ["lucy", "lezer"],
+  "author": "Matthew Phillips",
+  "license": "BSD-2-Clause",
+  "bugs": {
+    "url": "https://github.com/lucydsl/lezer-lucy/issues"
+  },
+  "homepage": "https://github.com/lucydsl/lezer-lucy#readme",
+  "devDependencies": {
+    "lezer-generator": "^0.13.4"
+  }
+}
