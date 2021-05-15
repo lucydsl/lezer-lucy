@@ -1,6 +1,6 @@
 {
   "name": "@lucy/lezer-lucy",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "A Lucy lezer grammar",
   "type": "module",
   "exports": "lib/parser.js",
@@ -15,7 +15,10 @@
     "type": "git",
     "url": "git+https://github.com/lucydsl/lezer-lucy.git"
   },
-  "keywords": ["lucy", "lezer"],
+  "keywords": [
+    "lucy",
+    "lezer"
+  ],
   "author": "Matthew Phillips",
   "license": "BSD-2-Clause",
   "bugs": {
