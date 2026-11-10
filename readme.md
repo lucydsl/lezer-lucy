@@ -1,6 +1,6 @@
 # @lucy/lezer-lucy
 
-A [Lucy](https://lucylang.org/) grammar for the [lezer](https://lezer.codemirror.net/) parser system.
+A [Lucy](https://lucy.spooky.click/) grammar for the [lezer](https://lezer.codemirror.net/) parser system.
 
 ## License
 
