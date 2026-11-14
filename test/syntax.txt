@@ -1,0 +1,169 @@
+# States at the top level, an initial and a final one
+
+initial state idle {
+  go => done
+}
+
+final state done {}
+
+==>
+
+Program(StateDeclaration(initial, state, VariableDefinition, StateBlock(EventTransition(VariableName, Arrow, VariableName))), StateDeclaration(final, state, VariableDefinition, StateBlock))
+
+# Use
+
+use './util.js' {
+  log,
+  check
+}
+
+==>
+
+Program(UseDeclaration(use, String, UseGroup(VariableDefinition, VariableDefinition)))
+
+# Named actions and guards
+
+action log = :log
+action save = assign(user, :pluck)
+action make = assign(child, spawn(other))
+action tell = send(child, ping)
+guard ok = check
+
+==>
+
+Program(ActionDeclaration(action, VariableDefinition, Symbol), ActionDeclaration(action, VariableDefinition, InlineAssign(assign, VariableName, Symbol)), ActionDeclaration(action, VariableDefinition, InlineAssign(assign, VariableName, InlineSpawn(spawn, VariableName))), ActionDeclaration(action, VariableDefinition, InlineSend(send, VariableName, VariableName)), GuardDeclaration(guard, VariableDefinition, VariableName))
+
+# Chained steps: guards, actions, assigns and a send
+
+machine m {
+  state idle {
+    go => ok => guard(:inline) => action(log) => assign(a, :b) => assign(c) => send(child, ping) => busy
+  }
+}
+
+==>
+
+Program(MachineDeclaration(machine, VariableDefinition, MachineBlock(StateDeclaration(state, VariableDefinition, StateBlock(EventTransition(VariableName, Arrow, VariableName, Arrow, InlineGuard(guard, Symbol), Arrow, InlineAction(action, VariableName), Arrow, InlineAssign(assign, VariableName, Symbol), Arrow, InlineAssign(assign, VariableName), Arrow, InlineSend(send, VariableName, VariableName), Arrow, VariableName))))))
+
+# A transition without a target
+
+state idle {
+  set => assign(n)
+}
+
+==>
+
+Program(StateDeclaration(state, VariableDefinition, StateBlock(EventTransition(VariableName, Arrow, InlineAssign(assign, VariableName)))))
+
+# Immediate transitions
+
+state check {
+  => guard(:ready) => go
+  => wait
+}
+
+==>
+
+Program(StateDeclaration(state, VariableDefinition, StateBlock(ImmediateTransition(ImmediateArrow, InlineGuard(guard, Symbol), Arrow, VariableName), ImmediateTransition(ImmediateArrow, VariableName))))
+
+# An immediate transition after a comment and a blank line
+
+state check {
+  go => wait // wait first
+
+  => wait
+}
+
+==>
+
+Program(StateDeclaration(state, VariableDefinition, StateBlock(EventTransition(VariableName, Arrow, VariableName), LineComment, ImmediateTransition(ImmediateArrow, VariableName))))
+
+# Delays: milliseconds, a timeframe, a function, a symbol
+
+state light {
+  delay(500) => red
+  delay(2s) => red
+  delay(calc) => red
+  delay(:named) => red
+}
+
+==>
+
+Program(StateDeclaration(state, VariableDefinition, StateBlock(DelayTransition(Delay(delay, Number), Arrow, VariableName), DelayTransition(Delay(delay, Number), Arrow, VariableName), DelayTransition(Delay(delay, VariableName), Arrow, VariableName), DelayTransition(Delay(delay, Symbol), Arrow, VariableName))))
+
+# on() for an event named like a keyword
+
+state idle {
+  on(delay) => idle
+  on(purchase) => idle
+}
+
+==>
+
+Program(StateDeclaration(state, VariableDefinition, StateBlock(EventTransition(OnEvent(on, delay), Arrow, VariableName), EventTransition(OnEvent(on, VariableName), Arrow, VariableName))))
+
+# @entry and @exit
+
+state busy {
+  @entry => log => action(:enter) => assign(x, :y)
+  @exit => action(log)
+}
+
+==>
+
+Program(StateDeclaration(state, VariableDefinition, StateBlock(LocalTransition(LocalName, Arrow, VariableName, Arrow, InlineAction(action, Symbol), Arrow, InlineAssign(assign, VariableName, Symbol)), LocalTransition(LocalName, Arrow, InlineAction(action, VariableName)))))
+
+# A block transition over several lines
+
+state start {
+  go => {
+    canGo =>
+      sureCanGo =>
+      end
+  }
+}
+
+==>
+
+Program(StateDeclaration(state, VariableDefinition, StateBlock(EventTransition(VariableName, Arrow, TransitionBlock(VariableName, Arrow, VariableName, Arrow, VariableName)))))
+
+# Invoke
+
+state loading {
+  invoke(getUsers) {
+    done => assign(users) => ready
+    error => failed
+  }
+}
+
+==>
+
+Program(StateDeclaration(state, VariableDefinition, StateBlock(InvokeDeclaration(invoke, VariableName, InvokeBlock(EventTransition(VariableName, Arrow, InlineAssign(assign, VariableName), Arrow, VariableName), EventTransition(VariableName, Arrow, VariableName))))))
+
+# A machine nested in a state, and a dotted target
+
+state idle {
+  machine idling {
+    initial state ok {}
+    state errored {}
+  }
+}
+
+state fetching {
+  fail => idle.errored
+}
+
+==>
+
+Program(StateDeclaration(state, VariableDefinition, StateBlock(MachineDeclaration(machine, VariableDefinition, MachineBlock(StateDeclaration(initial, state, VariableDefinition, StateBlock), StateDeclaration(state, VariableDefinition, StateBlock))))), StateDeclaration(state, VariableDefinition, StateBlock(EventTransition(VariableName, Arrow, Target(VariableName, VariableName)))))
+
+# Comments
+
+// A line comment.
+/* A block
+   comment. */
+state one {}
+
+==>
+
+Program(LineComment, BlockComment, StateDeclaration(state, VariableDefinition, StateBlock))

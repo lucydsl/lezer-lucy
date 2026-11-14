@@ -1,13 +1,13 @@
 {
   "name": "@lucy/lezer-lucy",
-  "version": "0.1.2",
+  "version": "0.2.0",
   "description": "A Lucy lezer grammar",
   "type": "module",
   "main": "lib/parser.js",
   "exports": "./lib/parser.js",
   "scripts": {
     "build": "lezer-generator src/lucy.grammar -o lib/parser.js",
-    "test": "npm run build && node test/smoke.js"
+    "test": "npm run build && node test/smoke.js && node test/run.js"
   },
   "files": [
     "lib"

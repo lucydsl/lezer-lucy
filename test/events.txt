@@ -1,0 +1,55 @@
+# An event without data
+
+machine light {
+  event go
+}
+
+==>
+
+Program(MachineDeclaration(machine, VariableDefinition, MachineBlock(
+  EventDeclaration(event, VariableDefinition))))
+
+# Events with types, beside states
+
+use './types' { User }
+
+machine session {
+  event login(User)
+  event rename(string)
+  event logout
+
+  initial state anonymous {
+    login => active
+  }
+
+  state active {
+    logout => anonymous
+  }
+}
+
+==>
+
+Program(
+  UseDeclaration(use, String, UseGroup(VariableDefinition)),
+  MachineDeclaration(machine, VariableDefinition, MachineBlock(
+    EventDeclaration(event, VariableDefinition, EventType(TypeName)),
+    EventDeclaration(event, VariableDefinition, EventType(TypeName)),
+    EventDeclaration(event, VariableDefinition),
+    StateDeclaration(initial, state, VariableDefinition, StateBlock(
+      EventTransition(VariableName, Arrow, VariableName))),
+    StateDeclaration(state, VariableDefinition, StateBlock(
+      EventTransition(VariableName, Arrow, VariableName))))))
+
+# `event` is still an event's name in a state
+
+machine inbox {
+  initial state idle {
+    event => idle
+  }
+}
+
+==>
+
+Program(MachineDeclaration(machine, VariableDefinition, MachineBlock(
+  StateDeclaration(initial, state, VariableDefinition, StateBlock(
+    EventTransition(VariableName, Arrow, VariableName))))))

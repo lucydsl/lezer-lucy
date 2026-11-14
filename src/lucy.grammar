@@ -1,16 +1,18 @@
-@top Program { statement+ }
+// Lucy's grammar, following the hand-written parser in liblucy
+// (src/core/parser/), which is the authority on the syntax.
+//
+// Lucy is line-based in one place: a transition ends at the end of its
+// line, and an immediate transition is a line that starts with `=>`. So
+// `=>` at the start of a line is a token of its own, ImmediateArrow, and
+// anywhere else it's an Arrow that continues the transition before it.
 
-@precedence {
-  call,
-  statement
-}
+@top Program { (statement | StateDeclaration)* }
 
-statement[@isGroup=Statement] {
+statement {
   UseDeclaration |
-  StateDeclaration |
+  MachineDeclaration |
   ActionDeclaration |
-  GuardDeclaration |
-  MachineDeclaration
+  GuardDeclaration
 }
 
 UseDeclaration {
@@ -26,88 +28,139 @@ MachineDeclaration {
 }
 
 MachineBlock {
-  "{" (ActionDeclaration | GuardDeclaration | StateBlock)* "}"
+  "{" (ActionDeclaration | GuardDeclaration | EventDeclaration | StateDeclaration)* "}"
 }
+
+// `event name` or `event name(Type)`. A contextual keyword, as `event` is
+// still an event's name inside a state.
+EventDeclaration {
+  ckw<"event"> VariableDefinition EventType?
+}
+
+EventType {
+  "(" TypeName ")"
+}
+
+TypeName { identifier }
 
 StateDeclaration {
   (ckw<"initial"> | ckw<"final">)? kw<"state"> VariableDefinition StateBlock
 }
 
 StateBlock {
-  "{" (EventTransition | ImmediateTransition | DelayTransition | InvokeDeclaration)* "}"
+  "{" (
+    EventTransition |
+    ImmediateTransition |
+    DelayTransition |
+    LocalTransition |
+    InvokeDeclaration |
+    MachineDeclaration
+  )* "}"
 }
 
 InvokeDeclaration {
-  kw<"invoke"> !call ArgList InvokeBlock
+  kw<"invoke"> "(" reference ")" InvokeBlock
 }
 
 InvokeBlock {
   "{" EventTransition* "}"
 }
 
-/*Block {
-  !statement "{" statement* "}"
-}*/
-
-VariableName { identifier ~arrow }
-VariableDefinition { identifier ~arrow }
-Symbol { symbol ~arrow }
-
 ActionDeclaration {
-  kw<"action"> VariableName "=" (VariableName | Symbol | InlineAssign)
+  kw<"action"> VariableDefinition "=" (reference | InlineAssign | InlineSend)
 }
 
 GuardDeclaration {
-  kw<"guard"> VariableName "=" (VariableName | Symbol)
+  kw<"guard"> VariableDefinition "=" reference
 }
 
-InlineAction {
-  kw<"action"> !call ArgList
-}
-
-Delay {
-  kw<"delay"> !call ArgList
-}
-
-InlineGuard {
-  kw<"guard"> !call ArgList
-}
-
-InlineAssign {
-  kw<"assign"> !call "(" commaSep<"..."? (VariableName | InlineSpawn)> ")"
-}
-
-InlineSpawn {
-  kw<"spawn"> !call ArgList
-}
-
-InlineSend {
-  kw<"send"> !call ArgList
-}
-
-DelayTransition {
-  Delay "=>" TransitionDest
-}
+// Transitions
 
 EventTransition {
-  VariableName "=>" TransitionDest
+  (VariableName | OnEvent) Arrow transitionBody
+}
+
+// on(name), for an event named like a keyword: on(delay).
+OnEvent {
+  ckw<"on"> "(" (VariableName | keywordAsName) ")"
 }
 
 ImmediateTransition {
-  "=>" TransitionDest
+  ImmediateArrow transitionBody
 }
 
-TransitionDest {
-  InlineGuard | InlineAction | InlineAssign | InlineSend | VariableName
+DelayTransition {
+  Delay Arrow transitionBody
 }
 
-ArgList {
-  "(" commaSep<"..."? expressionNoComma> ")"
+// @entry => ... and @exit => ...: actions, with no guards or target.
+LocalTransition {
+  LocalName Arrow transitionBody
 }
 
-expressionNoComma {
+// The steps of a transition, `=>` between them: guards, actions and the
+// target, in any order the compiler accepts. One may be a block, which can
+// span lines: `go => { a =>\n b }`.
+transitionBody {
+  step (Arrow step)* (Arrow TransitionBlock)? |
+  TransitionBlock
+}
+
+TransitionBlock {
+  "{" step (Arrow step)* "}"
+}
+
+step {
+  InlineGuard |
+  InlineAction |
+  InlineAssign |
+  InlineSend |
+  VariableName |
+  Target
+}
+
+// A nested state: idle.errored.
+Target {
+  VariableName ("." VariableName)+
+}
+
+// Calls
+
+Delay {
+  kw<"delay"> "(" (Number | reference) ")"
+}
+
+InlineGuard {
+  kw<"guard"> "(" reference ")"
+}
+
+InlineAction {
+  kw<"action"> "(" reference ")"
+}
+
+InlineAssign {
+  kw<"assign"> "(" VariableName ("," (reference | InlineSpawn))? ")"
+}
+
+InlineSpawn {
+  kw<"spawn"> "(" reference ")"
+}
+
+InlineSend {
+  kw<"send"> "(" VariableName "," VariableName ")"
+}
+
+reference {
   VariableName |
   Symbol
+}
+
+VariableName { identifier }
+VariableDefinition { identifier }
+
+keywordAsName {
+  kw<"use"> | kw<"machine"> | kw<"state"> | kw<"action"> | kw<"guard"> |
+  kw<"assign"> | kw<"invoke"> | kw<"delay"> | kw<"spawn"> | kw<"send">
 }
 
 commaSep<content> {
@@ -118,12 +171,19 @@ commaSep<content> {
 
 kw<term> { @specialize[@name={term}]<identifier, term> }
 
-// Contextual Keywords
+// Contextual keywords, which are names elsewhere.
 
 ckw<term> { @extend[@name={term}]<identifier, term> }
 
+@skip { space | newline | LineComment | BlockComment }
+
 @tokens {
-  whitespace { std.whitespace+ }
+  space { $[ \t]+ }
+
+  newline { "\r"? "\n" }
+
+  // `=>` first on a line, after any blank or space-only lines.
+  ImmediateArrow { "\r"? "\n" ($[ \t]* "\r"? "\n")* $[ \t]* "=>" }
 
   LineComment { "//" ![\n]* }
 
@@ -139,18 +199,23 @@ ckw<term> { @extend[@name={term}]<identifier, term> }
 
   identifier { word }
 
-  symbol { ":" word }
+  Symbol { ":" word }
 
-  @precedence { identifier, whitespace }
+  LocalName { "@" word }
+
+  // 200, 2s, 1m.
+  Number { std.digit+ $[sm]* }
 
   String {
     '"' (![\\\n"] | "\\" _)* '"'? |
     "'" (![\\\n'] | "\\" _)* "'"?
   }
 
-  "=>"[@name=Arrow]
-}
+  Arrow { "=>" }
 
-@skip { whitespace | LineComment | BlockComment }
+  @precedence { ImmediateArrow, newline }
+
+  "(" ")" "{" "}" "," "=" "."
+}
 
 @detectDelim
