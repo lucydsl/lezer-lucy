@@ -26,8 +26,20 @@ MachineDeclaration {
 }
 
 MachineBlock {
-  "{" (ActionDeclaration | GuardDeclaration | StateBlock)* "}"
+  "{" (ActionDeclaration | GuardDeclaration | EventDeclaration | StateDeclaration)* "}"
 }
+
+// `event name` or `event name(Type)`. A contextual keyword, as `event` is
+// still an event's name inside a state.
+EventDeclaration {
+  ckw<"event"> VariableDefinition EventType?
+}
+
+EventType {
+  !call "(" TypeName ")"
+}
+
+TypeName { identifier }
 
 StateDeclaration {
   (ckw<"initial"> | ckw<"final">)? kw<"state"> VariableDefinition StateBlock
