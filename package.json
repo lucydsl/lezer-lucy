@@ -7,7 +7,7 @@
   "exports": "./lib/parser.js",
   "scripts": {
     "build": "lezer-generator src/lucy.grammar -o lib/parser.js",
-    "test": "npm run build && node test/run.js"
+    "test": "npm run build && node test/smoke.js && node test/run.js"
   },
   "files": [
     "lib"
