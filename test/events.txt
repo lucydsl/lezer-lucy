@@ -36,9 +36,9 @@ Program(
     EventDeclaration(event, VariableDefinition, EventType(TypeName)),
     EventDeclaration(event, VariableDefinition),
     StateDeclaration(initial, state, VariableDefinition, StateBlock(
-      EventTransition(VariableName, Arrow, TransitionDest(VariableName)))),
+      EventTransition(VariableName, Arrow, VariableName))),
     StateDeclaration(state, VariableDefinition, StateBlock(
-      EventTransition(VariableName, Arrow, TransitionDest(VariableName)))))))
+      EventTransition(VariableName, Arrow, VariableName))))))
 
 # `event` is still an event's name in a state
 
@@ -52,4 +52,4 @@ machine inbox {
 
 Program(MachineDeclaration(machine, VariableDefinition, MachineBlock(
   StateDeclaration(initial, state, VariableDefinition, StateBlock(
-    EventTransition(VariableName, Arrow, TransitionDest(VariableName)))))))
+    EventTransition(VariableName, Arrow, VariableName))))))
