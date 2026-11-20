@@ -1,0 +1,90 @@
+# Inputs, with and without types
+
+use './types' { Storage }
+
+machine todoItem {
+  input title(string)
+  input storage(Storage)
+  input id
+
+  initial state active {}
+}
+
+==>
+
+Program(
+  UseDeclaration(use, String, UseGroup(VariableDefinition)),
+  MachineDeclaration(machine, VariableDefinition, MachineBlock(
+    InputDeclaration(input, VariableDefinition, InputType(TypeName)),
+    InputDeclaration(input, VariableDefinition, InputType(TypeName)),
+    InputDeclaration(input, VariableDefinition),
+    StateDeclaration(initial, state, VariableDefinition, StateBlock))))
+
+# `input` is still an event's name in a state
+
+machine form {
+  initial state idle {
+    input => idle
+  }
+}
+
+==>
+
+Program(MachineDeclaration(machine, VariableDefinition, MachineBlock(
+  StateDeclaration(initial, state, VariableDefinition, StateBlock(
+    EventTransition(VariableName, Arrow, VariableName))))))
+
+# A spawn with a block of inputs
+
+machine todoList {
+  initial state ready {
+    add => assign(todo, spawn(todoItem) {
+      title = event.data
+      storage = context.storage
+      list = self
+      owner = parent
+      id = makeId
+      label = :label
+    }) => ready
+  }
+}
+
+==>
+
+Program(MachineDeclaration(machine, VariableDefinition, MachineBlock(
+  StateDeclaration(initial, state, VariableDefinition, StateBlock(
+    EventTransition(VariableName, Arrow,
+      InlineAssign(assign, VariableName, InlineSpawn(spawn, VariableName, SpawnBlock(
+        SpawnInput(PropertyName, MemberValue(VariableName, PropertyName)),
+        SpawnInput(PropertyName, MemberValue(VariableName, PropertyName)),
+        SpawnInput(PropertyName, VariableName),
+        SpawnInput(PropertyName, VariableName),
+        SpawnInput(PropertyName, VariableName),
+        SpawnInput(PropertyName, Symbol)))),
+      Arrow, VariableName))))))
+
+# A block on one line, an empty one, and one in a named action
+
+action addDraft = assign(draft, spawn(:todoItem) { title = context.draft })
+
+machine todoList {
+  initial state ready {
+    one => assign(todo, spawn(todoItem) { title = event.data }) => ready
+    none => assign(todo, spawn(todoItem) {}) => ready
+  }
+}
+
+==>
+
+Program(
+  ActionDeclaration(action, VariableDefinition, InlineAssign(assign, VariableName, InlineSpawn(spawn, Symbol, SpawnBlock(
+    SpawnInput(PropertyName, MemberValue(VariableName, PropertyName)))))),
+  MachineDeclaration(machine, VariableDefinition, MachineBlock(
+    StateDeclaration(initial, state, VariableDefinition, StateBlock(
+      EventTransition(VariableName, Arrow,
+        InlineAssign(assign, VariableName, InlineSpawn(spawn, VariableName, SpawnBlock(
+          SpawnInput(PropertyName, MemberValue(VariableName, PropertyName))))),
+        Arrow, VariableName),
+      EventTransition(VariableName, Arrow,
+        InlineAssign(assign, VariableName, InlineSpawn(spawn, VariableName, SpawnBlock)),
+        Arrow, VariableName))))))

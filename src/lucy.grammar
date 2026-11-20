@@ -28,7 +28,7 @@ MachineDeclaration {
 }
 
 MachineBlock {
-  "{" (ActionDeclaration | GuardDeclaration | EventDeclaration | StateDeclaration)* "}"
+  "{" (ActionDeclaration | GuardDeclaration | EventDeclaration | InputDeclaration | StateDeclaration)* "}"
 }
 
 // `event name` or `event name(Type)`. A contextual keyword, as `event` is
@@ -38,6 +38,16 @@ EventDeclaration {
 }
 
 EventType {
+  "(" TypeName ")"
+}
+
+// `input name` or `input name(Type)`: a key of the context that whoever
+// creates the machine supplies. A contextual keyword, like `event`.
+InputDeclaration {
+  ckw<"input"> VariableDefinition InputType?
+}
+
+InputType {
   "(" TypeName ")"
 }
 
@@ -143,7 +153,22 @@ InlineAssign {
 }
 
 InlineSpawn {
-  kw<"spawn"> "(" reference ")"
+  kw<"spawn"> "(" reference ")" SpawnBlock?
+}
+
+// The inputs given to what is spawned, a `name = value` to a line:
+// spawn(todoItem) { title = event.data }
+SpawnBlock {
+  "{" SpawnInput* "}"
+}
+
+SpawnInput {
+  PropertyName "=" (MemberValue | reference)
+}
+
+// event.data or context.key. self, parent and functions are references.
+MemberValue {
+  VariableName "." PropertyName
 }
 
 InlineSend {
@@ -157,6 +182,7 @@ reference {
 
 VariableName { identifier }
 VariableDefinition { identifier }
+PropertyName { identifier }
 
 keywordAsName {
   kw<"use"> | kw<"machine"> | kw<"state"> | kw<"action"> | kw<"guard"> |
