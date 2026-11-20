@@ -77,7 +77,7 @@ InvokeBlock {
 }
 
 ActionDeclaration {
-  kw<"action"> VariableDefinition "=" (reference | InlineAssign | InlineSend)
+  kw<"action"> VariableDefinition "=" (reference | InlineAssign | InlineSend | InlineAppend | InlineRemove)
 }
 
 GuardDeclaration {
@@ -125,6 +125,8 @@ step {
   InlineAction |
   InlineAssign |
   InlineSend |
+  InlineAppend |
+  InlineRemove |
   VariableName |
   Target
 }
@@ -175,6 +177,18 @@ value {
 // event.data or context.key. self, parent and functions are references.
 MemberValue {
   VariableName "." PropertyName
+}
+
+// append(todos, spawn(todoItem)): add what is spawned to a list. `append`
+// and `remove` are contextual keywords: an event can still be called
+// either.
+InlineAppend {
+  ckw<"append"> "(" VariableName "," InlineSpawn ")"
+}
+
+// remove(todos, event.data): stop a machine and take it out of a list.
+InlineRemove {
+  ckw<"remove"> "(" VariableName "," MemberValue ")"
 }
 
 // send(actor, event), or with a value for the event's data:
