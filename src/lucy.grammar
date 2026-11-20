@@ -163,7 +163,13 @@ SpawnBlock {
 }
 
 SpawnInput {
-  PropertyName "=" (MemberValue | reference)
+  PropertyName "=" value
+}
+
+// A value is a reference, never an expression.
+value {
+  MemberValue |
+  reference
 }
 
 // event.data or context.key. self, parent and functions are references.
@@ -171,8 +177,10 @@ MemberValue {
   VariableName "." PropertyName
 }
 
+// send(actor, event), or with a value for the event's data:
+// send(parent, removed, self)
 InlineSend {
-  kw<"send"> "(" VariableName "," VariableName ")"
+  kw<"send"> "(" VariableName "," VariableName ("," value)? ")"
 }
 
 reference {
