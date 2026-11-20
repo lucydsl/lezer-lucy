@@ -1,0 +1,68 @@
+# Appending a spawn to a list, and removing from it
+
+machine todoList {
+  initial state ready {
+    add => append(todos, spawn(todoItem) {
+      title = event.data
+    }) => ready
+    plain => append(todos, spawn(:todoItem)) => ready
+    removedTodo => remove(todos, event.data) => ready
+    drop => remove(todos, context.selected) => ready
+  }
+}
+
+==>
+
+Program(MachineDeclaration(machine, VariableDefinition, MachineBlock(
+  StateDeclaration(initial, state, VariableDefinition, StateBlock(
+    EventTransition(VariableName, Arrow,
+      InlineAppend(append, VariableName, InlineSpawn(spawn, VariableName, SpawnBlock(
+        SpawnInput(PropertyName, MemberValue(VariableName, PropertyName))))),
+      Arrow, VariableName),
+    EventTransition(VariableName, Arrow,
+      InlineAppend(append, VariableName, InlineSpawn(spawn, Symbol)),
+      Arrow, VariableName),
+    EventTransition(VariableName, Arrow,
+      InlineRemove(remove, VariableName, MemberValue(VariableName, PropertyName)),
+      Arrow, VariableName),
+    EventTransition(VariableName, Arrow,
+      InlineRemove(remove, VariableName, MemberValue(VariableName, PropertyName)),
+      Arrow, VariableName))))))
+
+# In named actions and in @entry
+
+action addTodo = append(todos, spawn(todoItem))
+action drop = remove(todos, context.selected)
+
+state ready {
+  @entry => append(todos, spawn(todoItem))
+  @exit => remove(todos, context.selected)
+}
+
+==>
+
+Program(
+  ActionDeclaration(action, VariableDefinition, InlineAppend(append, VariableName, InlineSpawn(spawn, VariableName))),
+  ActionDeclaration(action, VariableDefinition, InlineRemove(remove, VariableName, MemberValue(VariableName, PropertyName))),
+  StateDeclaration(state, VariableDefinition, StateBlock(
+    LocalTransition(LocalName, Arrow, InlineAppend(append, VariableName, InlineSpawn(spawn, VariableName))),
+    LocalTransition(LocalName, Arrow, InlineRemove(remove, VariableName, MemberValue(VariableName, PropertyName))))))
+
+# `remove` and `append` are still names of events
+
+machine todoItem {
+  initial state active {
+    remove => removed
+    append => send(list, remove) => active
+  }
+
+  state removed {}
+}
+
+==>
+
+Program(MachineDeclaration(machine, VariableDefinition, MachineBlock(
+  StateDeclaration(initial, state, VariableDefinition, StateBlock(
+    EventTransition(VariableName, Arrow, VariableName),
+    EventTransition(VariableName, Arrow, InlineSend(send, VariableName, VariableName), Arrow, VariableName))),
+  StateDeclaration(state, VariableDefinition, StateBlock))))
