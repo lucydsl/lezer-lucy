@@ -88,3 +88,32 @@ Program(
       EventTransition(VariableName, Arrow,
         InlineAssign(assign, VariableName, InlineSpawn(spawn, VariableName, SpawnBlock)),
         Arrow, VariableName))))))
+
+# A send with a value for the event's data
+
+action tell = send(list, removed, self)
+
+machine todoItem {
+  initial state active {
+    rename => send(list, renamed, event.data) => active
+    touch => send(parent, touched, context.id) => send(parent, summary, :summarise) => active
+    plain => send(parent, forwarded) => active
+  }
+}
+
+==>
+
+Program(
+  ActionDeclaration(action, VariableDefinition, InlineSend(send, VariableName, VariableName, VariableName)),
+  MachineDeclaration(machine, VariableDefinition, MachineBlock(
+    StateDeclaration(initial, state, VariableDefinition, StateBlock(
+      EventTransition(VariableName, Arrow,
+        InlineSend(send, VariableName, VariableName, MemberValue(VariableName, PropertyName)),
+        Arrow, VariableName),
+      EventTransition(VariableName, Arrow,
+        InlineSend(send, VariableName, VariableName, MemberValue(VariableName, PropertyName)),
+        Arrow, InlineSend(send, VariableName, VariableName, Symbol),
+        Arrow, VariableName),
+      EventTransition(VariableName, Arrow,
+        InlineSend(send, VariableName, VariableName),
+        Arrow, VariableName))))))
