@@ -117,3 +117,31 @@ Program(
       EventTransition(VariableName, Arrow,
         InlineSend(send, VariableName, VariableName),
         Arrow, VariableName))))))
+
+# Symbols given in a spawn's block, beside inputs
+
+machine todoList {
+  initial state ready {
+    add => append(todos, spawn(todoItem) {
+      title = event.data
+      :canDelete = :canDeleteTodo
+      :log = log
+    }) => ready
+    one => assign(todo, spawn(todoItem) { :log = log }) => ready
+  }
+}
+
+==>
+
+Program(MachineDeclaration(machine, VariableDefinition, MachineBlock(
+  StateDeclaration(initial, state, VariableDefinition, StateBlock(
+    EventTransition(VariableName, Arrow,
+      InlineAppend(append, VariableName, InlineSpawn(spawn, VariableName, SpawnBlock(
+        SpawnInput(PropertyName, MemberValue(VariableName, PropertyName)),
+        SpawnSymbol(Symbol, Symbol),
+        SpawnSymbol(Symbol, VariableName)))),
+      Arrow, VariableName),
+    EventTransition(VariableName, Arrow,
+      InlineAssign(assign, VariableName, InlineSpawn(spawn, VariableName, SpawnBlock(
+        SpawnSymbol(Symbol, VariableName)))),
+      Arrow, VariableName))))))

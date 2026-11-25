@@ -158,10 +158,17 @@ InlineSpawn {
   kw<"spawn"> "(" reference ")" SpawnBlock?
 }
 
-// The inputs given to what is spawned, a `name = value` to a line:
+// What is given to what is spawned, one to a line: inputs, `name = value`,
+// and symbols, `:name = function`.
 // spawn(todoItem) { title = event.data }
 SpawnBlock {
-  "{" SpawnInput* "}"
+  "{" (SpawnInput | SpawnSymbol)* "}"
+}
+
+// :name = function gives the machine one of its :symbols: a function from
+// `use`, or a :symbol of the spawning machine.
+SpawnSymbol {
+  Symbol "=" reference
 }
 
 SpawnInput {
