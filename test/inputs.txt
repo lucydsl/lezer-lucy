@@ -145,3 +145,28 @@ Program(MachineDeclaration(machine, VariableDefinition, MachineBlock(
       InlineAssign(assign, VariableName, InlineSpawn(spawn, VariableName, SpawnBlock(
         SpawnSymbol(Symbol, VariableName)))),
       Arrow, VariableName))))))
+
+# Inputs and symbols in an invoke's block, beside its transitions
+
+machine timer {
+  state running {
+    invoke(countdown) {
+      seconds = event.data
+      label = describe
+      :more = :keepGoing
+      done => idle
+    }
+    tick => assign(remaining)
+  }
+}
+
+==>
+
+Program(MachineDeclaration(machine, VariableDefinition, MachineBlock(
+  StateDeclaration(state, VariableDefinition, StateBlock(
+    InvokeDeclaration(invoke, VariableName, InvokeBlock(
+      SpawnInput(PropertyName, MemberValue(VariableName, PropertyName)),
+      SpawnInput(PropertyName, VariableName),
+      SpawnSymbol(Symbol, Symbol),
+      EventTransition(VariableName, Arrow, VariableName))),
+    EventTransition(VariableName, Arrow, InlineAssign(assign, VariableName)))))))

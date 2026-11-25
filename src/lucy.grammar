@@ -72,8 +72,10 @@ InvokeDeclaration {
   kw<"invoke"> "(" reference ")" InvokeBlock
 }
 
+// The transitions on its outcome and, for a machine, what it is given: the
+// lines of a spawn's block.
 InvokeBlock {
-  "{" EventTransition* "}"
+  "{" (EventTransition | SpawnInput | SpawnSymbol)* "}"
 }
 
 ActionDeclaration {
